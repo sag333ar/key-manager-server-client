@@ -1,0 +1,36 @@
+version: "4"
+services:
+  mongo:
+    image: mongo
+    container_name: k_man_mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=some-admin
+      - MONGO_INITDB_ROOT_PASSWORD=some-admin-password
+    volumes:
+      - "./data:/data/db"
+      - "$PWD/mongo-entrypoint/:/docker-entrypoint-initdb.d/"
+    command: mongod --quiet --logpath /dev/null
+    restart: always
+    ports:
+      - "27017:27017"
+
+  k_man:
+    container_name: k_man_container
+    image: k_man_image
+    restart: always
+    environment:
+      - DB=mongodb://some-db-admin:some-db-admin-password@mongo:27017/some-db?authSource=some-db
+    build: .
+    ports:
+      - "9988:9988"
+    links:
+      - mongo
+
+  # updater:
+  #   image: k_man_image
+  #   depends_on:
+  #     - k_man
+  #   restart: always
+  #   command: npm run updater
+  #   environment:
+  #     - DB=mongodb://some-db-admin:some-db-admin-password@mongo:27017/some-db?authSource=some-db

@@ -1,0 +1,332 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Key Manager Server",
+    "description": "APIs for Key Manager Server.",
+    "version": "1.0.0"
+  },
+  "host": "localhost:9988",
+  "servers": [
+    {
+      "url": "https://some-server.com",
+      "description": "APIs for Key Manager Server."
+    }
+  ],
+  "basePath": "/",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "example": "any"
+                },
+                "eUUID": {
+                  "example": "any"
+                },
+                "keyType": {
+                  "example": "any"
+                },
+                "authCode": {
+                  "example": "any"
+                },
+                "client": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/ops/request": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "example": "any"
+                },
+                "eUUID": {
+                  "example": "any"
+                },
+                "keyType": {
+                  "example": "any"
+                },
+                "client": {
+                  "example": "any"
+                },
+                "ops": {
+                  "example": "any"
+                },
+                "signature": {
+                  "example": "any"
+                },
+                "pubKey": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/ops": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "example": "any"
+                },
+                "eUUID": {
+                  "example": "any"
+                },
+                "keyType": {
+                  "example": "any"
+                },
+                "client": {
+                  "example": "any"
+                },
+                "signature": {
+                  "example": "any"
+                },
+                "pubKey": {
+                  "example": "any"
+                },
+                "opsCode": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/ops/approve": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "example": "any"
+                },
+                "eUUID": {
+                  "example": "any"
+                },
+                "keyType": {
+                  "example": "any"
+                },
+                "client": {
+                  "example": "any"
+                },
+                "signature": {
+                  "example": "any"
+                },
+                "pubKey": {
+                  "example": "any"
+                },
+                "opsCode": {
+                  "example": "any"
+                },
+                "opsApprovedTrxId": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/ops/reject": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "example": "any"
+                },
+                "eUUID": {
+                  "example": "any"
+                },
+                "keyType": {
+                  "example": "any"
+                },
+                "client": {
+                  "example": "any"
+                },
+                "signature": {
+                  "example": "any"
+                },
+                "pubKey": {
+                  "example": "any"
+                },
+                "opsCode": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/approve": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "example": "any"
+                },
+                "eUUID": {
+                  "example": "any"
+                },
+                "keyType": {
+                  "example": "any"
+                },
+                "authCode": {
+                  "example": "any"
+                },
+                "validity": {
+                  "example": "any"
+                },
+                "signature": {
+                  "example": "any"
+                },
+                "pubKey": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/reject": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "example": "any"
+                },
+                "eUUID": {
+                  "example": "any"
+                },
+                "keyType": {
+                  "example": "any"
+                },
+                "authCode": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    }
+  }
+}

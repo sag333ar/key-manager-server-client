@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Client Page</title>
+    <script src="./blurt-ecc.js"></script>
+  </head>
+  <div id="loginDiv">
+    <table>
+      <tr>
+        <td colspan="2"><h3>Any dApp for Blurt Platform</h3></td>
+      </tr>
+      <tr>
+        <td>UserName</td>
+        <td><input type="text" id="username" value="i-am-the-flash" /></td>
+      </tr>
+      <tr>
+        <td>Client Encryption Key<br/><div style="font-size: 0.75em;">Any Private Key to encrypt data</div></td>
+        <td><input type="text" id="ekey" readonly="true" style="border: none; border-color: transparent; width: 100px;" value="5...."/></td>
+      </tr>
+      <tr>
+        <td>AuthCode</td>
+        <td><input type="text" id="authCode" readonly="true" style="border: none; border-color: transparent; width: 100px;" value=""/></td>
+      </tr>
+      <tr>
+        <td>eUUID</td>
+        <td><input type="text" id="eUUID" readonly="true" style="border: none; border-color: transparent; width: 100px;" value=""/></td>
+      </tr>
+      <tr>
+        <td>Key Type</td>
+        <td><input type="text" id="keyType" readonly="true" style="border: none; border-color: transparent; width: 100px;" value=""/></td>
+      </tr>
+      <tr>
+        <td>QR Code</td>
+        <td><div class="qr-code"></div></td>
+      </tr>
+      <tr>
+        <td>
+          <button onclick="sendAuth()" />Request to Log in</button>
+        </td>
+        <td>
+          <button onclick="getStatus()" />Request Status</button>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div id="commentDiv" style="visibility: hidden;">
+    <table>
+      <tr>
+        <td>UserName</td>
+        <td><input type="text" readonly="true" id="c_username" style="border: none; border-color: transparent; width: 100px;" value="i-am-the-flash" /></td>
+      </tr>
+      <tr>
+        <td>Client Encryption Key<br/><div style="font-size: 0.75em;">Any Private Key to encrypt data</div></td>
+        <td><input type="text" id="c_ekey" readonly="true" style="border: none; border-color: transparent; width: 100px;" value=...."/></td>
+      </tr>
+      <tr>
+        <td>OpsCode</td>
+        <td><input type="text" id="c_opsCode" readonly="true" style="border: none; border-color: transparent; width: 100px;" value=""/></td>
+      </tr>
+      <tr>
+        <td>eUUID</td>
+        <td><input type="text" id="c_eUUID" readonly="true" style="border: none; border-color: transparent; width: 100px;" value=""/></td>
+      </tr>
+      <tr>
+        <td>Key Type</td>
+        <td><input type="text" id="c_keyType" readonly="true" style="border: none; border-color: transparent; width: 100px;" value=""/></td>
+      </tr>
+      <tr>
+        <td>Signature</td>
+        <td><input type="text" id="c_signature" readonly="true" style="border: none; border-color: transparent; width: 100px;" value=""/></td>
+      </tr>
+      <tr>
+        <td>Public Key</td>
+        <td><input type="text" id="c_publickey" readonly="true" style="border: none; border-color: transparent; width: 100px;" value=""/></td>
+      </tr>
+      <tr>
+        <td>Parent Author</td>
+        <td><input type="text" id="c_parentAuthor" style="width: 100px;" value="saboin"/></td>
+      </tr>
+      <tr>
+        <td>Parent Permlink</td>
+        <td><input type="text" id="c_parentPermlink" style="width: 100px;" value="fix-for-broadcast-errors-and-server-disconnects-or-dev-update-2022-05-16"/></td>
+      </tr>
+      <tr>
+        <td>Comment</td>
+        <td><input type="text" id="c_comment" style="width: 100px;" value="Hey saboin this is a test text comment from bKeyServerClient"/></td>
+      </tr>
+      <tr>
+        <td>QR Code</td>
+        <td><div class="qr-code-comment"></div></td>
+      </tr>
+      <tr>
+        <td>
+          <button onclick="sendOps()" />Request to Post Comment</button>
+        </td>
+        <td>
+          <button onclick="" />Request Status</button>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div id="successDiv" style="visibility: hidden;">Comment was published</div>
+    <script src="https://cdn.jsdelivr.net/npm/@blurtfoundation/blurtjs/dist/blurt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.1.0/uuidv4.min.js"></script>
+    <script src="https://unpkg.com/@beblurt/dblurt@latest/dist/dblurt.js"></script>
+    <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
+    <script src="https://bundle.run/buffer@6.0.3"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-base64@3.7.7/base64.min.js"></script>
+    <script>
+      const server = "http://localhost:7733";
+      // const server = "https://some-server.com";
+      const key = "";
+      let uuid = "";
+      let memo = "";
+      let keyType = "posting";
+      let publicPostingKey = "";
+      const app = {
+        name: "app.blurt.blog",
+        icon: "https://app.blurt.blog/assets/favicon.png",
+        info: "Mobile Web App for blurt.blog"
+      };
+      var client = new dblurt.Client([
+        "https://rpc.beblurt.com",
+        "https://rpc.blurt.world",
+        "https://blurt-rpc.saboin.com"
+      ], { timeout: 1500 });
+
+      function b64uEnc(str) {
+        const b64uLookup = {
+          "/": "_",
+          _: "/",
+          "+": "-",
+          "-": "+",
+          "=": ".",
+          ".": "=",
+        };
+        return window.Base64.encode(str).replace(
+          /(\+|\/|=)/g,
+          (m) => b64uLookup[m]
+        );
+      }
+
+      function b64uDec(str) {
+        const b64uLookup = {
+          "/": "_",
+          _: "/",
+          "+": "-",
+          "-": "+",
+          "=": ".",
+          ".": "=",
+        };
+        return window.Base64.decode(str).replace(
+          /(-|_|\.)/g,
+          (m) => b64uLookup[m]
+        );
+      }
+
+      async function getStatus() {
+        const username = document.getElementById('username').value;
+        const authCode = document.getElementById('authCode').value;
+        const eUUID = document.getElementById('eUUID').value;
+        const keyType = document.getElementById('keyType').value;
+        let dataToSend = JSON.stringify({
+          "username": username,
+          "authCode": authCode,
+          "eUUID": eUUID,
+          "keyType": keyType,
+          "client": app
+        });
+        let config = {
+          method: 'post',
+          maxBodyLength: Infinity,
+          url: server,
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          data : dataToSend
+        };
+        const responseData = await axios.request(config);
+        console.log(`Response data is ${JSON.stringify(responseData.data)}`)
+        if (responseData.data.authStatus === "approved") {
+          document.getElementById('c_username').value = document.getElementById('username').value;
+          document.getElementById('c_ekey').value = document.getElementById('ekey').value;
+          document.getElementById('c_opsCode').value = "";
+          document.getElementById('c_eUUID').value = document.getElementById('eUUID').value;
+          document.getElementById('c_keyType').value = document.getElementById('keyType').value;
+          document.getElementById('c_signature').value = responseData.data.approval.signature;
+          document.getElementById('c_publickey').value = responseData.data.approval.publicKey;
+          document.getElementById('commentDiv').style = "display: visible;";
+          document.getElementById('loginDiv').style = "display: none;";
+        }
+      }
+
+      async function sendAuth() {
+        const username = document.getElementById('username').value;
+        const eKey = document.getElementById('ekey').value;
+        const qrElement = document.querySelector(".qr-code");
+        const data = await client.condenser.getAccounts([username]);
+        publicPostingKey = data[0].posting.key_auths[0][0];
+        uuid = uuidv4().toString();
+        let publicKey = dblurt.PublicKey.fromString(publicPostingKey);
+        const privateKey = dblurt.PrivateKey.fromString(eKey);
+        memo = dblurt.encodeMemo(`#${uuid}`, privateKey, publicKey);
+        let dataToSend = JSON.stringify({
+          "username": username,
+          "eUUID": memo,
+          "keyType": keyType,
+          "client": app
+        });
+        let config = {
+          method: 'post',
+          maxBodyLength: Infinity,
+          url: server,
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          data : dataToSend
+        };
+        const responseData = await axios.request(config);
+        const code = responseData.data.authCode;
+        const object = {
+          username: username,
+          eUUID: memo,
+          keyType: keyType,
+          client: app,
+          authCode: responseData.data.authCode,
+          ts: responseData.data.ts,
+        }
+        document.getElementById('authCode').value = responseData.data.authCode;
+        document.getElementById('eUUID').value = memo;
+        document.getElementById('keyType').value = keyType;
+        const string = JSON.stringify(object);
+        const base64 = b64uEnc(string);
+        qrElement.innerHTML = "";
+        let qrcode = new QRCode(qrElement, {
+          text: base64,
+          width: 400, //128
+          height: 400,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+        let download = document.createElement("button");
+        qrElement.appendChild(download);
+        let download_link = document.createElement("a");
+        download_link.setAttribute("download", "qr_code.png");
+        download_link.innerHTML = `Download`;
+        download.appendChild(download_link);
+        let qr_code_img = document.querySelector(".qr-code img");
+        let qr_code_canvas = document.querySelector("canvas");
+        if (qr_code_img.getAttribute("src") == null) {
+          setTimeout(() => {
+            download_link.setAttribute("href", `${qr_code_canvas.toDataURL()}`);
+          }, 300);
+        } else {
+          setTimeout(() => {
+            download_link.setAttribute("href", `${qr_code_img.getAttribute("src")}`);
+          }, 300);
+        }
+      }
+    
+      async function sendOps() {
+        const username = document.getElementById('c_username').value;
+        const eUUID = document.getElementById('c_eUUID').value;
+        const keyType = document.getElementById('c_keyType').value;
+        const signature = document.getElementById('c_signature').value;
+        const publicKey = document.getElementById('c_publickey').value;
+        const qrElement = document.querySelector(".qr-code-comment");
+        const commentText = document.getElementById('c_comment').value;
+        const parentAuthor = document.getElementById('c_parentAuthor').value;
+        const parentPermlink = document.getElementById('c_parentPermlink').value;
+        const dateText = (new Date().toISOString()).replaceAll("-","").replaceAll("T","").replaceAll(":","").replaceAll(".","").replaceAll("Z","")
+        const permlink = `re-${username}-${dateText}`;
+        const opsObject = [
+          "comment",
+          {
+            "parent_author": parentAuthor,
+            "parent_permlink": parentPermlink,
+            "author": username,
+            "title": "",
+            "body": commentText,
+            "permlink": permlink,
+            "json_metadata": "",
+          },
+        ];
+        const opsString = JSON.stringify(opsObject);
+        let dataToSend = JSON.stringify({
+          username: username, 
+          eUUID : eUUID, 
+          keyType: keyType, 
+          signature: signature,
+          pubKey: publicKey,
+          ops: opsString,
+          "client": app
+        });
+        let config = {
+          method: 'post',
+          maxBodyLength: Infinity,
+          url: `${server}/ops/request`,
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          data : dataToSend
+        };
+        const responseData = await axios.request(config);
+        console.log(`Response from server is ${JSON.stringify(responseData.data)}`);
+        const object = {
+          username: username,
+          eUUID: eUUID,
+          keyType: keyType,
+          client: app,
+          opsCode: responseData.data.opsCode,
+          signature: signature,
+          pubKey: publicKey
+        }
+        document.getElementById('c_opsCode').value = responseData.data.opsCode;
+        const string = JSON.stringify(object);
+        const base64 = b64uEnc(string);
+        qrElement.style = "";
+        let qrcode = new QRCode(qrElement, {
+          text: base64,
+          width: 400, //128
+          height: 400,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+        let download = document.createElement("button");
+        qrElement.appendChild(download);
+        let download_link = document.createElement("a");
+        download_link.setAttribute("download", "qr_code.png");
+        download_link.innerHTML = `Download`;
+        download.appendChild(download_link);
+        let qr_code_img = document.querySelector(".qr-code-comment img");
+        let qr_code_canvas = document.querySelector("canvas");
+        if (qr_code_img.getAttribute("src") == null) {
+          setTimeout(() => {
+            download_link.setAttribute("href", `${qr_code_canvas.toDataURL()}`);
+          }, 300);
+        } else {
+          setTimeout(() => {
+            download_link.setAttribute("href", `${qr_code_img.getAttribute("src")}`);
+          }, 300);
+        }
+      }
+
+      async function getOpsStatus() {
+        const username = document.getElementById('c_username').value;
+        const eUUID = document.getElementById('c_eUUID').value;
+        const keyType = document.getElementById('c_keyType').value;
+        const signature = document.getElementById('c_signature').value;
+        const publicKey = document.getElementById('c_publickey').value;
+        const opsCode = document.getElementById('c_opsCode').value
+        let dataToSend = JSON.stringify({
+          "username": username,
+          "eUUID": eUUID,
+          "keyType": keyType,
+          "opsCode": opsCode,
+          "signature": signature,
+          "pubKey": publicKey,
+          "client": app
+        });
+        let config = {
+          method: 'post',
+          maxBodyLength: Infinity,
+          url: `${server}/ops`,
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          data : dataToSend
+        };
+        console.log("------- Getting Ops Data ------");
+        const opsData = await axios.request(config);
+        console.log(JSON.stringify(opsData.data));
+        if (opsData.data.opsStatus === "approved") {
+          document.getElementById('successDiv').style = "display: visible;";
+          document.getElementById('commentDiv').style = "display: none;";
+        }
+      }
+
+    </script>
+  </body>
+</html>

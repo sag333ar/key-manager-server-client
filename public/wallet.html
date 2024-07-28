@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="./blurt-ecc.js"></script>
+</head>
+<body>
+  <table>
+    <tr>
+      <td colspan="2"><h3>Blurt Wallet</h3></td>
+    </tr>
+    <tr>
+      <td>Username</td>
+      <td><input type="text" id="username" value="i-am-the-flash" /></td>
+    </tr>
+    <tr>
+      <td>Private Key</td>
+      <td><input type="text" id="pkey" readonly="true" style="border: none; border-color: transparent; width: 100px;" value="5J...." /></td>
+    </tr>
+    </table>
+    <hr/>
+    <table>
+      <tr>
+        <td><h3>Scan QR Code</h3></td>
+        <td>
+          <div class="section">
+            <div id="my-qr-reader">
+            </div>
+        </div>
+        </td>
+      </tr>
+    <tr>
+      <td>AuthCode or OpsCode</td>
+      <td><input type="text" id="authcode" /></td>
+    </tr>
+    <tr>
+      <td>eUUID</td>
+      <td><input type="text" id="eUUID" readonly="true" style="border: none; border-color: transparent; width: 100px;" value="" /></td>
+    </tr>
+    <tr>
+      <td>Public Key</td>
+      <td><input type="text" id="publicKey" readonly="true" style="border: none; border-color: transparent; width: 100px;" value="" /></td>
+    </tr>
+    <tr>
+      <td>Signature</td>
+      <td><input type="text" id="signature" /></td>
+    </tr>
+    <tr>
+      <td>
+        <button onclick="approveAuth()" />Approve Login</button>
+      </td>
+      <td>
+        <button onclick="approveOps()" />Approve Ops</button>
+      </td>
+    </tr>
+  </table>
+  <script src="https://cdn.jsdelivr.net/npm/@blurtfoundation/blurtjs/dist/blurt.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.1.0/uuidv4.min.js"></script>
+  <script src="https://unpkg.com/@beblurt/dblurt@latest/dist/dblurt.js"></script>
+  <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
+  <script src="https://bundle.run/buffer@6.0.3"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdn.jsdelivr.net/npm/js-base64@3.7.7/base64.min.js"></script>
+  <script>
+      function b64uEnc(str) {
+        const b64uLookup = {
+          "/": "_",
+          "_": "/",
+          "+": "-",
+          "-": "+",
+          "=": ".",
+          ".": "=",
+        };
+        return window.Base64.encode(str).replace(
+          /(\+|\/|=)/g,
+          (m) => b64uLookup[m]
+        );
+      }
+
+      function b64uDec(str) {
+        const b64uLookup = {
+          "/": "_",
+          "_": "/",
+          "+": "-",
+          "-": "+",
+          "=": ".",
+          ".": "=",
+        };
+        let string = str.replace(/(-|_|\.)/g,
+          (m) => b64uLookup[m]
+        );
+        const result = window.Base64.decode(string);
+        return result;
+      }
+  function domReady(fn) {
+      if (document.readyState === "complete" || document.readyState === "interactive") {
+          setTimeout(fn, 1000);
+      } else {
+          document.addEventListener("DOMContentLoaded", fn);
+      }
+  }
+
+  async function prepareDataForApproval(data) {
+    const pkey = document.getElementById('pkey').value;
+    const privateKey = dblurt.PrivateKey.fromString(pkey);
+    const publicKey = privateKey.createPublic();
+    const encoder = new TextEncoder();
+    const messageBuffer = encoder.encode(document.getElementById('signature').value); 
+    const hashBuffer = await crypto.subtle.digest('SHA-256', messageBuffer);
+    const hashArray = new Uint8Array(hashBuffer); 
+    const signature = privateKey.sign(hashArray).toString();
+    document.getElementById('signature').value = signature;
+    document.getElementById('eUUID').value = data.eUUID;
+    document.getElementById('publicKey').value = publicKey.toString();
+  }
+
+  domReady(function () {
+      function onScanSuccess(decodeText, decodeResult) {
+          const dataString = b64uDec(decodeText);
+          const data = JSON.parse(dataString);
+          app = data.client;
+          keyType = data.keyType;
+          if (Object.hasOwn(data, 'authCode')) {
+            document.getElementById('authcode').value = data.authCode;
+            document.getElementById('signature').value = data.ts;
+            prepareDataForApproval(data);
+          } else if (Object.hasOwn(data, 'opsCode')) {
+            document.getElementById('eUUID').value = data.eUUID;
+            document.getElementById('signature').value = data.signature;
+            document.getElementById('publicKey').value = data.pubKey;
+            document.getElementById('authcode').value = data.opsCode;
+          }
+      }
+      let htmlscanner = new Html5QrcodeScanner(
+          "my-qr-reader",
+          { fps: 10, qrbos: 250 }
+      );
+      htmlscanner.render(onScanSuccess);
+  });
+
+    const server = "http://localhost:7733";
+    // const server = "https://some-server.com";
+    const key = "";
+    let uuid = "";
+    let memo = "";
+    let keyType = null;
+    let publicPostingKey = "";
+    let app = null;
+    var client = new dblurt.Client([
+      "https://rpc.beblurt.com",
+      // "https://rpc.blurt.world",
+      // "https://blurt-rpc.saboin.com"
+    ], { timeout: 1500 });
+
+    async function approveAuth() {
+      const username = document.getElementById('username').value;
+      const authcode = document.getElementById('authcode').value;
+      const signature = document.getElementById('signature').value;
+      const eUUID = document.getElementById('eUUID').value;
+      const publicKey = document.getElementById('publicKey').value;
+      let dataToSend2 = JSON.stringify({
+        "username": username,
+        "eUUID": eUUID,
+        "keyType": keyType,
+        "authCode": document.getElementById('authcode').value,
+        "validity": "1 day",
+        "signature": signature,
+        "pubKey": publicKey,
+        "client": app,
+      });
+      let config2 = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: `${server}/approve`,
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        data : dataToSend2
+      };
+      const responseData2 = await axios.request(config2);
+      console.log("-------Approving request------");
+      console.log(JSON.stringify(responseData2.data));
+    }
+
+    async function approveOps() {
+      const username = document.getElementById('username').value;
+      const opsCode = document.getElementById('authcode').value;
+      const signature = document.getElementById('signature').value;
+      const eUUID = document.getElementById('eUUID').value;
+      const publicKey = document.getElementById('publicKey').value;
+      let dataToSend = JSON.stringify({
+        "username": username,
+        "eUUID": eUUID,
+        "keyType": keyType,
+        "opsCode": document.getElementById('authcode').value,
+        "signature": signature,
+        "pubKey": publicKey,
+        "client": app,
+      });
+      let config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: `${server}/ops`,
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        data : dataToSend
+      };
+      console.log("------- Getting Ops Data ------");
+      const opsData = await axios.request(config);
+      console.log(JSON.stringify(opsData.data));
+      const ops = JSON.parse(opsData.data.opsData);
+      const pkey = document.getElementById('pkey').value;
+      const privateKey = dblurt.PrivateKey.fromString(pkey);
+      console.log("------- Broadcasting ------");
+      const result = await client.broadcast.sendOperations([ops], privateKey);
+      console.log(`Broadcast result ${JSON.stringify(result)}`);
+      const id = result.id;
+      let dataToSend2 = JSON.stringify({
+        "username": username,
+        "eUUID": eUUID,
+        "keyType": keyType,
+        "opsCode": document.getElementById('authcode').value,
+        "signature": signature,
+        "pubKey": publicKey,
+        "client": app,
+        "opsApprovedTrxId": id,
+      });
+      let config2 = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: `${server}/ops/approve`,
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        data : dataToSend2
+      };
+      console.log("------- Updating Ops Data with approval ------");
+      const updateData = await axios.request(config);
+    }
+  </script>
+</body>
+</html>
